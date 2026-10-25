@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="用 Obsidian 与 Codex 整理跨项目背景，也学习如何区分知识结构和真实积累。">
+  <meta name="theme-color" content="#244e40">
+  <title>个人知识库：从目录、索引到可验证的检索 · EBee的个人网站</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <script src="../assets/main.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳转到正文</a>
+  <header class="site-header wrap">
+    <a class="brand" href="../index.html" aria-label="EBee的个人网站首页"><span class="brand-mark" aria-hidden="true">✳</span><span>EBee的个人网站<span class="brand-sub">MICHAEL-EBEE / FIELD NOTES</span></span></a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation" hidden>菜单 <span aria-hidden="true">＋</span></button>
+    <nav id="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../notes.html" aria-current="page">手记</a><a href="../about.html">关于</a><a class="github-link" href="https://github.com/Michael-EBee" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span><span class="sr-only">（新窗口打开）</span></a></nav>
+  </header>
+  <main id="main" class="article-main wrap"><a class="back-link" href="../notes.html">← 返回所有手记</a>
+<header class="article-header"><div class="note-meta"><span class="tag">知识管理</span><time datetime="2026-10-25">2026 年 10 月 25 日</time></div><h1>个人知识库：从目录、索引到可验证的检索</h1><p>用 Obsidian 与 Codex 整理跨项目背景，也学习如何区分知识结构和真实积累。</p><div class="author-line"><span class="author-avatar" aria-hidden="true">e.</span><span>EBee</span><span>实践回顾 / 004</span></div></header>
+<article class="prose article-body"><nav class="article-toc" aria-label="文章目录"><span class="tiny-label">IN THIS NOTE</span><a href="#layers">01 / 分层读取</a><a href="#para">02 / 目录与事实源</a><a href="#numbering">03 / 编号与路径</a><a href="#retrieval">04 / 检索验收</a><a href="#maturity">05 / 内容成熟度</a></nav><p class="article-lead">我想解决的，是不同项目和对话之间反复交代背景、又难以找回重要判断的问题。</p><p>Obsidian 成了存放这些资料的地方，Codex 则帮助我整理结构、索引、模板和读取方式。这个项目经历过分层记忆设计、PARA 目录组织和语义检索验收，也留下了“结构可用之后，内容还要慢慢积累”的提醒。</p>
+<h2 id="layers">先安排读取顺序</h2><p>早期设计把资料分为三层：稳定规则和总入口、摘要与工作记忆、按需打开的详细笔记。每次复杂任务先看入口和摘要，再通过关键词与索引找到有关内容。</p><p>这个结构希望避免两种麻烦：每次从零解释全部背景，或者每次把整个知识库加载进来。未完成事项、关键决策和详细资料的入口，也因此有了各自的存放位置。</p>
+<h2 id="para">目录组织与真实项目分开维护</h2><p>后续知识库使用了 Projects、Areas、Resources、Archives 等归属，配合 Inbox、系统区和附件区。一个实际项目可以在知识库里有入口和复盘，但工程当前状态仍应回到对应项目的事实源核对。</p><p>这样，Obsidian 可以负责连接背景与可复用经验，而不必再复制一套容易与源码仓库冲突的工程状态。</p>
+<h2 id="numbering">一次目录编号引出的教训</h2><p>我曾问，目录为什么是 <code>00、01、10、20、30、40、90</code>，中间是不是还有没建完的模块。后来的核对说明，这只是预留排序空间，不代表每一个空号都对应缺失功能。</p><p>此前把目录改成连续编号，反而出现配置、Dataview 查询和脚本路径不同步的问题。这让我意识到，目录名称也是工具之间的接口。修改它时，要看依赖关系，不能只看文件夹列表是否整齐。</p>
+<h2 id="retrieval">检索是否有用，要用真实问题检查</h2><p>知识库还进行过一轮中文语义检索验收：用 20 个自然语言问题检查目标笔记是否进入前 5 个结果。历史记录中的结果是 19/20，通过了当时设定的门槛。</p><p>这只代表该组问题和该次索引下的结果，不是知识库对所有问题都有 95% 的准确率。未命中的问题被保留下来，也没有为了让测试通过就改写正文迎合题目。</p><p>索引范围同样经过检查：模板、测试题目、临时输入、归档内容和不应进入 AI 检索的笔记，需要与正式检索资料分开。否则，一次看似命中的搜索，可能只是搜到了测试页本身。</p>
+<h2 id="maturity">可用结构与成熟内容，是两件进度</h2><p>项目后来建立了原子知识卡片、产品模块与产品资产的模板和入口，但完整的知识资产化仍需要真实项目产物。SOP、验证过的卡片、交付证据和复用记录，都不能靠建几个空目录代替。</p><p>因此，一些栏目保持空白，一些资产保持框架状态。这些状态帮助我看清接下来应该积累什么，而不是为了看起来完整去填入没有依据的内容。</p>
+<h2 id="daily">让知识库跟着实际工作生长</h2><p>日常流程逐渐被整理成：先捕获，再判断归属；在项目中完成任务，检查结果后提炼经验；最后更新索引，把暂时不再使用的内容归档。</p><p>对我来说，知识库的价值在于以后能否找到并理解当时的经验。目录、插件和检索只是帮助完成这件事的工具，内容仍然要来自实际使用。</p><p class="editorial-note">依据个人知识库会话及历史验收记录整理。19/20 仅描述当时固定问题集的前五检索命中结果；知识资产化仍需实际内容与交付积累。</p></article>
+<div class="article-bottom"><span>✳ 一次尝试，一点积累。</span><a class="text-link" href="../notes.html">返回所有手记 →</a></div></main>
+  <footer class="site-footer wrap"><a class="footer-brand" href="../index.html">✳ EBee的个人网站</a><p>记录尝试，也记录思考。</p><a href="https://github.com/Michael-EBee" target="_blank" rel="noopener noreferrer">Michael-EBee <span aria-hidden="true">↗</span><span class="sr-only">（新窗口打开）</span></a></footer>
+</body>
+</html>

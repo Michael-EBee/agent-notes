@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="从周月榜分析、选曲条件，到工具调用与结构化输出，记录一段反复梳理的产品设计。">
+  <meta name="theme-color" content="#244e40">
+  <title>Spotify：把热榜分析整理成 AI 选曲工具方案 · EBee的个人网站</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <script src="../assets/main.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳转到正文</a>
+  <header class="site-header wrap">
+    <a class="brand" href="../index.html" aria-label="EBee的个人网站首页"><span class="brand-mark" aria-hidden="true">✳</span><span>EBee的个人网站<span class="brand-sub">MICHAEL-EBEE / FIELD NOTES</span></span></a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation" hidden>菜单 <span aria-hidden="true">＋</span></button>
+    <nav id="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../notes.html" aria-current="page">手记</a><a href="../about.html">关于</a><a class="github-link" href="https://github.com/Michael-EBee" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span><span class="sr-only">（新窗口打开）</span></a></nav>
+  </header>
+  <main id="main" class="article-main wrap"><a class="back-link" href="../notes.html">← 返回所有手记</a>
+<header class="article-header"><div class="note-meta"><span class="tag">产品设计</span><time datetime="2026-10-25">2026 年 10 月 25 日</time></div><h1>Spotify：把热榜分析整理成 AI 选曲工具方案</h1><p>从周月榜分析、选曲条件，到工具调用与结构化输出，记录一段反复梳理的产品设计。</p><div class="author-line"><span class="author-avatar" aria-hidden="true">e.</span><span>EBee</span><span>实践回顾 / 002</span></div></header>
+<article class="prose article-body"><nav class="article-toc" aria-label="文章目录"><span class="tiny-label">IN THIS NOTE</span><a href="#foundation">01 / 数据分析基础</a><a href="#scene">02 / 使用场景</a><a href="#workflow">03 / 工作流</a><a href="#tools">04 / 工具边界</a><a href="#generation">05 / 输出校验</a><a href="#application">06 / 应用方案</a><a href="#codex">07 / 与 Codex 的协作</a></nav><p class="article-lead">我想把 Spotify 的周榜、月榜分析，整理成一个能辅助选曲和维护歌单的工具方案。</p>
+<p>这个方向后来被明确为“音乐热榜分析与 AI 歌单运营工具”。把“简历修改”中的讨论往前追，可以看到一条更完整的线：先有音乐热度与歌曲特征分析，再讨论面向不同口味群体的垂类热榜和评分卡，最后整理成对话式 AI 选曲工具方案。</p>
+<p class="content-note"><strong>阶段说明：数据分析经历与 AI 工具方案。</strong>原始材料记录了榜单分析工作；后续 AI 功能讨论含有案例推演，文中将其作为方案介绍，应用实现与部署效果仍需代码和运行记录核验。</p>
+<h2 id="foundation">先有一份音乐榜单分析基础</h2><p>原始分析材料围绕 Spotify Global Chart 2024 周榜展开，规模是 10,600 条记录。工作包括统一日期、排名、播放量口径，整理为 9 字段清洗 CSV，再进行统计与可视化。</p><p>材料列出了五项分析指标：</p><ul><li><strong>头部歌曲、头部歌手：</strong>分别观察歌曲和歌手维度的榜单表现。</li><li><strong>月度热度：</strong>把周榜记录汇总到月度，查看热度变化。</li><li><strong>在榜周期：</strong>观察一首歌在榜单上持续出现的情况。</li><li><strong>排名跃升：</strong>找出排名变化明显的候选。</li></ul><p>历史材料还记录了用 PySpark 复算五项指标、与 Hadoop 结果逐行比较，以及 8 张 PNG、3 张 SVG 图表产物。这些构成了后续讨论的分析基础；它们与后来设想的对话应用、工具调用和个性化推荐，需要分开说明。</p><h2 id="scene">先把使用场景说清楚</h2><p>最初，“Spotify 相关工作”是一个很宽的题目。我逐渐把关注点收在音乐内容运营：每周、每月查看热榜变化，筛选适合不同偏好群体的候选歌曲，再整理和调整歌单。</p>
+<p>在产品方向的讨论中，我提出过按不同音乐口味细分用户，用评分卡形成垂类热榜，而不是只看同一张总榜。阶段性方案因此出现了“垂类 Top 20”和可解释选曲助手。后续我明确认可了“音乐热榜分析与 AI 歌单运营工具”这个定位，也要求把 Spotify 写进具体使用场景，而不是只在标题后加一个“Spotify 数据”的括号。这样，读者才能理解数据分析服务于什么任务，应用又为什么需要对话和解释。</p>
+<h2 id="workflow">把一句需求拆成查询、评分和解释</h2><p>我用“本月上涨的新歌、同一歌手不要重复太多”这类表达来梳理输入。它至少包含时间窗、趋势条件、候选范围、歌曲数量和歌手去重要求。条件缺失时，方案允许继续追问、补全和调整。</p>
+<div class="process-strip" aria-label="方案流程"><span>描述需求</span><span aria-hidden="true">→</span><span>查询榜单</span><span aria-hidden="true">→</span><span>候选评分</span><span aria-hidden="true">→</span><span>生成与校验</span></div>
+<p>这一轮梳理把任务拆成了“查询→评分→解释”。Prompt 和 Few-shot 示例围绕条件解析来设计，查询与评分则通过明确的工具入口完成。相比堆砌技术名词，我更关心每一步能否对应到用户提出的要求。</p>
+<h2 id="tools">工具调用要有输入和返回边界</h2><p>现有设计材料提出了 <code>query_charts</code> 和 <code>score_tracks</code> 两类工具：前者处理周榜、月榜查询，后者处理候选歌曲的分群评分。时间窗、数量和权重作为受校验的参数，通过工具注册表执行并返回结果。</p>
+<p>这里的分工是：把可查询、可计算的部分放进工具，把需求理解和结果解释放在对话环节。工具结果里的候选 ID 和指标，再成为后续生成歌单的依据。这是方案中的职责划分，尚不能作为真实接口已经接通的证明。</p>
+<h2 id="generation">歌单输出要能被检查</h2><p>方案为歌单、入选理由和榜单摘要设计了结构化输出，并考虑用 JSON Schema、Pydantic 校验约束字段。除了格式，还要检查歌曲 ID 是否来自工具返回的候选集、数量是否符合要求、同一歌手是否超过上限。</p>
+<p>讨论中还整理了几个评估入口：</p><ul><li><strong>需求有歧义：</strong>检查是否补问必要条件，而不是随意补出偏好。</li><li><strong>候选为空：</strong>说明没有符合条件的结果，再讨论如何调整条件。</li><li><strong>生成了越界 ID：</strong>校验应识别它，不能仅凭推荐理由流畅就放行。</li></ul>
+<p>这些是设计中的检查用例，不是已完成的线上评测成绩。它们让我更具体地思考，AI 生成在什么地方需要受到数据和业务规则的约束。</p>
+<h2 id="application">把分析流程接到应用体验</h2><p>简历材料以 10,600 条榜单记录为数据处理背景，整理了 pandas 清洗、统一字段的做法。在应用方案中，又考虑用 Streamlit 展示对话、歌单预览和 CSV 导出，用 SQLite 保存会话与歌单版本。</p>
+<p>工程细节包括按数据版本缓存工具结果，以及在超时、输出无效时限次重试，随后回退到规则候选。这些安排是为了让一次分析能够回看和调整，而不止得到一段推荐文字。</p>
+<h2 id="codex">这段经历里，我怎样使用 Codex</h2><p>已有会话里能直接看到的，是多轮设计调整：先确定工具的业务定位，再把“数据管道→选曲引擎→AI 交互→应用交付”串成一个过程，随后把重心放到 Prompt、工具调用、结构化生成与评估。</p>
+<p>我提出目标和表达上的问题，Codex 帮我拆分步骤、整理候选技术和异常情况，再由我继续判断哪些内容符合这个项目的方向。这个过程让我看到，明确问题、压缩范围和检查方案，也需要持续投入。</p>
+<h2 id="next">接下来需要补齐什么</h2><p>要把方案进一步写成实现复盘，还需要找回原始脚本、数据处理产物或独立项目会话，并核对完整应用的运行记录。真实 Spotify 账号接入、工具调用成功率、选曲质量和部署效果，都应在有证据后再补充。</p><p>在这些材料齐备之前，我会把这篇保留为设计经历：记录一个想法怎样逐渐变成有输入、有步骤、有输出约束的工具方案。</p><p class="editorial-note">整理自“简历修改”项目的原始 Spotify 分析介绍、产品定位讨论和后续 AI 工具设计。数字与产物对应历史材料；应用功能按方案介绍，不作为部署成果。</p></article>
+<div class="article-bottom"><span>✳ 一次尝试，一点积累。</span><a class="text-link" href="../notes.html">返回所有手记 →</a></div></main>
+  <footer class="site-footer wrap"><a class="footer-brand" href="../index.html">✳ EBee的个人网站</a><p>记录尝试，也记录思考。</p><a href="https://github.com/Michael-EBee" target="_blank" rel="noopener noreferrer">Michael-EBee <span aria-hidden="true">↗</span><span class="sr-only">（新窗口打开）</span></a></footer>
+</body>
+</html>

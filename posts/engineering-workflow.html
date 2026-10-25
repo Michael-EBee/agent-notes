@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="执行、验收、Git 与阶段关口怎样配合，以及流程过重时怎样回头简化。">
+  <meta name="theme-color" content="#244e40">
+  <title>工程工作流：在自动推进与人工判断之间调整 · EBee的个人网站</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <script src="../assets/main.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳转到正文</a>
+  <header class="site-header wrap">
+    <a class="brand" href="../index.html" aria-label="EBee的个人网站首页"><span class="brand-mark" aria-hidden="true">✳</span><span>EBee的个人网站<span class="brand-sub">MICHAEL-EBEE / FIELD NOTES</span></span></a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation" hidden>菜单 <span aria-hidden="true">＋</span></button>
+    <nav id="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../notes.html" aria-current="page">手记</a><a href="../about.html">关于</a><a class="github-link" href="https://github.com/Michael-EBee" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span><span class="sr-only">（新窗口打开）</span></a></nav>
+  </header>
+  <main id="main" class="article-main wrap"><a class="back-link" href="../notes.html">← 返回所有手记</a>
+<header class="article-header"><div class="note-meta"><span class="tag">工程协作</span><time datetime="2026-10-25">2026 年 10 月 25 日</time></div><h1>工程工作流：在自动推进与人工判断之间调整</h1><p>执行、验收、Git 与阶段关口怎样配合，以及流程过重时怎样回头简化。</p><div class="author-line"><span class="author-avatar" aria-hidden="true">e.</span><span>EBee</span><span>实践回顾 / 005</span></div></header>
+<article class="prose article-body"><nav class="article-toc" aria-label="文章目录"><span class="tiny-label">IN THIS NOTE</span><a href="#roles">01 / 执行与验收</a><a href="#automation">02 / 自动接力</a><a href="#git">03 / Git 记录</a><a href="#tests">04 / 环境验证</a><a href="#simplify">05 / 简化流程</a></nav><p class="article-lead">这段经历的起点，是我希望 Codex 能持续推进项目，同时让关键判断和检查过程保持清楚。</p><p>我尝试把需求分析、PRD、技术调研与架构设计、PLAN、代码实现串成明确阶段，并为项目状态、执行与验收设计规则。真正使用后，流程本身也成了需要不断调整的对象。</p>
+<h2 id="roles">验收失败后，应该由谁修改</h2><p>早期采用执行与独立验收分开的方式。我发现一个问题：验收失败后，Agent 有时直接留在验收窗口修订，结果检查者也成了修改者，原先的职责边界就不清楚了。</p><p>为此，后续规则强调由执行方修复同一任务，再把新的候选交回验收方检查。检查要能指出依据和失败原因，不能仅凭执行方说“已经修好”就视为通过。</p>
+<h2 id="automation">自动接力，也要有明确的下一步</h2><p>另一个问题是，能够自行处理的小事反复要求我人工确认，工作会被打断。后续讨论把普通技术问题与关键决策区分开，并尝试让 Codex 建立或复用执行、验收任务配对。</p><p>自动接力的范围被逐步收在“当前阶段存在唯一下一任务”的情况下。跨阶段、下一步不唯一、涉及关键架构或权限变化时，需要回到我这里判断。</p><p>这些限制不是只写在一段说明里：项目规则、启动提示、角色说明和回归断言都需要保持一致，否则从不同入口启动，仍可能得到不同的行为。</p>
+<h2 id="git">让接手的人能从 Git 重建现场</h2><p>项目需求、状态、交付对象和检查结果被整理进 Git，而不是只保留在聊天中。迁移模板或继续任务时，要核对当前提交、工作区和绑定关系，再判断下一步。</p><p>有一次迁移中，模板同步检查通过，但项目原有的验收记录与基线指向仍存在矛盾。记录保留了这个问题，没有用“模板迁移成功”替代“项目全部状态正确”。这两项检查能证明的范围不同。</p>
+<h2 id="tests">一次测试兼容性问题</h2><p>相关会话记录了 Windows PowerShell 执行结构测试时，中文正则断言触发参数解析问题。修订集中在测试匹配方式和断言上，再重新运行结构、行为与兼容性检查。</p><p>这个例子提醒我，流程不仅要能在文档上解释通，还要在实际运行环境里验证。某个候选通过检查，也不能提前替代独立验收尚未返回的最终结果。</p>
+<h2 id="simplify">后来，我也尝试减少流程负担</h2><p>后续我要求把一份用户级工作流收窄为五个主要阶段，去掉通用层面的执行、验收窗口交接，同时保留项目事实来自 Git 等原则；已有项目自己的规则则需要分别处理。</p><p>我也经历过 PLAN 和控制文档不断增加、旧状态干扰新工程路径的情况。相关项目后来进行了归档与重新开始。对我来说，这说明流程需要接受实际交付的检验，不能只靠文档越来越多来证明它有效。</p>
+<h2 id="takeaway">留给下一次项目的判断</h2><p>先让需求、下一步行动和检查依据清楚，再决定需要多少流程。普通问题能自动处理就继续推进；关键决定要有明确的人和依据；一次失败也要能说清楚回到哪里修复。</p><p>这套做法仍在随项目调整。不同项目的复杂度和风险不同，我希望保留的是可以核对的协作方式，而不是把每一次工作都套进同样重的模板。</p><p class="editorial-note">依据工作流设计、修订、Skill 收窄和项目复盘记录整理，描述历史尝试。各代码项目仍应遵循其当前仓库的规则与授权。</p></article>
+<div class="article-bottom"><span>✳ 一次尝试，一点积累。</span><a class="text-link" href="../notes.html">返回所有手记 →</a></div></main>
+  <footer class="site-footer wrap"><a class="footer-brand" href="../index.html">✳ EBee的个人网站</a><p>记录尝试，也记录思考。</p><a href="https://github.com/Michael-EBee" target="_blank" rel="noopener noreferrer">Michael-EBee <span aria-hidden="true">↗</span><span class="sr-only">（新窗口打开）</span></a></footer>
+</body>
+</html>

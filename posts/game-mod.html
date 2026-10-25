@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="一段基于 More Enemies 的修复与玩法调整经历，包含实测反馈、范围收缩和未完成候选。">
+  <meta name="theme-color" content="#244e40">
+  <title>游戏 Mod：从 ARK 修复到增敌定制 · EBee的个人网站</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <script src="../assets/main.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳转到正文</a>
+  <header class="site-header wrap">
+    <a class="brand" href="../index.html" aria-label="EBee的个人网站首页"><span class="brand-mark" aria-hidden="true">✳</span><span>EBee的个人网站<span class="brand-sub">MICHAEL-EBEE / FIELD NOTES</span></span></a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation" hidden>菜单 <span aria-hidden="true">＋</span></button>
+    <nav id="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../notes.html" aria-current="page">手记</a><a href="../about.html">关于</a><a class="github-link" href="https://github.com/Michael-EBee" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span><span class="sr-only">（新窗口打开）</span></a></nav>
+  </header>
+  <main id="main" class="article-main wrap"><a class="back-link" href="../notes.html">← 返回所有手记</a>
+<header class="article-header"><div class="note-meta"><span class="tag">游戏 Mod</span><time datetime="2026-10-25">2026 年 10 月 25 日</time></div><h1>游戏 Mod：从 ARK 修复到增敌定制</h1><p>一段基于 More Enemies 的修复与玩法调整经历，包含实测反馈、范围收缩和未完成候选。</p><div class="author-line"><span class="author-avatar" aria-hidden="true">e.</span><span>EBee</span><span>实践回顾 / 006</span></div></header>
+<article class="prose article-body"><nav class="article-toc" aria-label="文章目录"><span class="tiny-label">IN THIS NOTE</span><a href="#start">01 / 兼容性修复</a><a href="#verified">02 / 实测反馈</a><a href="#design">03 / 区域与触发</a><a href="#scope">04 / 收缩需求</a><a href="#candidate">05 / 候选状态</a><a href="#performance">06 / 性能与回归</a></nav><p class="article-lead">我曾用 Codex 协助修复和定制一款现有游戏 Mod：More Enemies。最初要解决的是 ARK 章节的流程问题，后来才扩展到指定区域的增敌设计。</p><p>这段经历最值得记录的，是几种结果之间的区别：文件可以解析、离线检查通过、实际游戏流程恢复、整套玩法扩展完成，各自都需要自己的证据。</p>
+<h2 id="start">从已有 Mod 的兼容性问题开始</h2><p>当时的目标是在保留增敌效果的前提下，排查 ARK 植物 Boss 之后进入方舟的异常。我明确要求先尝试完整保留增敌的修复，再考虑玩法调整。</p><p>项目记录中的候选修复只改了两份 ARK 角色池里过期的类型校验值：10 个字段，共 40 字节。敌人数量、位置、生成配置和其他章节保持原状，目的是把兼容性修复的影响范围收窄。</p>
+<h2 id="verified">离线检查之后，还有游戏内反馈</h2><p>那一轮候选记录了 7 项离线测试通过，但交付时仍明确要求从植物 Boss 前的存档验证入口。随后，我在继续优化的会话里反馈：“之前修复没有问题，修复很成功。”</p><p>这条反馈支持当时那项修复的游戏内结果；后续新增的敌人、刷新规则和其他章节，仍需要分别检查。不能因为一个入口恢复正常，就把整套 Mod 的稳定性一起算作通过。</p>
+<h2 id="design">增敌需求，要落到区域和触发条件</h2><p>修复之后，我希望在疗养院、Camp2 营地、桥面、警局周边等指定地点增加敌人，并区分普通怪、特殊怪、首次进入和回访时的体验。</p><p>Codex 协助比较了 More Enemies 与 Multiple Enemies 的场景与生成配置。比较过程中反复需要澄清：场景文件里的生成定义数，不等于同时出现在玩家面前的敌人数；不同章节共用的资源，也不能直接按某一段流程整体替换。</p><p>需求还涉及过场、任务推进、死亡检查、读档和角色池容量。我关心的不只是“能刷出来”，也包括新增遭遇是否会挡住原有流程。</p>
+<h2 id="scope">我后来主动放弃了一部分刷新机制</h2><p>早期讨论过任务后回访、进入建筑后重复刷新，以及 Camp2 和桥面的持续补刷。随着状态、触发和存档处理越来越复杂，我决定取消 Camp2／桥面的重刷，把这一批收回固定增量；疗养院阁楼返回后的相关尝试另行保留。</p><p>桥面的目标也从区域总量调整为按已有新增原点扩为三倍。这不是同一种数量口径，更新要求时必须同步写清楚，避免执行方继续沿用旧目标。</p>
+<h2 id="candidate">最后一批能核对到的候选</h2><p>已有归档会话记录了一份独立候选包，范围是选定的 Mod 新增原点：</p><div class="table-scroll" tabindex="0" role="region" aria-label="Camp2 与桥面候选配置表"><table><caption>Camp2 与桥面候选中的配置目标</caption><thead><tr><th scope="col">范围</th><th scope="col">该批候选配置</th><th scope="col">边界</th></tr></thead><tbody><tr><th scope="row">Camp2</th><td>30 只普通＋3 只特殊</td><td>针对选定新增原点，不含区域全部原版敌人</td></tr><tr><th scope="row">桥面</th><td>9 只普通</td><td>保留原生整组触发，不加入重刷</td></tr></tbody></table></div>
+<p>交付记录列出了 672 项场景检查、44 项回归测试和独立审查通过，同时明确写着：<strong>尚未部署或实机验证，整个 Mod 仍未完成。</strong>后续的继续请求出现中断；现有记录不足以把这份候选描述成最终完成版。</p>
+<h2 id="performance">性能目标还要回到实际游戏</h2><p>当时我要求保留光追设置，并希望较高密度战斗仍有可接受的帧率。设计讨论因此需要把同屏敌人数、特殊怪、尸体、跨区追击和场景触发一起考虑。</p><p>这些讨论没有形成整套扩展稳定达到目标帧率的实测结果。离线场景检查有价值，但它不能代替在指定画质下反复检查战斗、过场、存读档和任务推进。</p>
+<h2 id="lesson">这次与 Codex 协作留下了什么</h2><p>我负责给出具体玩法目标、选择取舍和反馈实际体验，Codex 帮助追踪配置关系、比较参考 Mod、制作局部修复与候选，并整理检查依据。</p><p>从一次很小的兼容性修复，到后来主动收缩复杂刷新机制，这段经历让我更清楚地看到：在陌生系统里修改行为，要持续核对范围；确认某个阶段成功以后，也要保留后续还没完成的部分。</p><p class="editorial-note">依据已归档的 More Enemies 修复与定制会话整理。ARK 修复有当时的用户实测反馈；后续 Camp2／桥面候选没有同等实机验证。本文不提供或重新分发原 Mod、游戏资源及候选包。</p></article>
+<div class="article-bottom"><span>✳ 一次尝试，一点积累。</span><a class="text-link" href="../notes.html">返回所有手记 →</a></div></main>
+  <footer class="site-footer wrap"><a class="footer-brand" href="../index.html">✳ EBee的个人网站</a><p>记录尝试，也记录思考。</p><a href="https://github.com/Michael-EBee" target="_blank" rel="noopener noreferrer">Michael-EBee <span aria-hidden="true">↗</span><span class="sr-only">（新窗口打开）</span></a></footer>
+</body>
+</html>
