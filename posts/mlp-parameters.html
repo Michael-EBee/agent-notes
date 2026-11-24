@@ -8,10 +8,10 @@
   <title>MLP 如何学会奇偶判断？ · EBee的个人网站</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../assets/styles.css">
-  <link rel="stylesheet" href="../assets/mlp-lab.css?v=4">
+  <link rel="stylesheet" href="../assets/mlp-lab.css?v=5">
   <script defer src="../assets/main.js"></script>
   <script defer src="../assets/mlp-model.js?v=4"></script>
-  <script defer src="../assets/mlp-lab.js?v=4"></script>
+  <script defer src="../assets/mlp-lab.js?v=5"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳转到正文</a>
@@ -32,7 +32,6 @@
     <section class="bench" aria-label="MLP 训练实验" id="bench" hidden>
       <div class="board">
         <div class="board-head"><div><p class="lab-kicker">NETWORK VIEW</p><h2>前向传播 <span id="topology" aria-label="网络结构">4 → 8 → 1</span></h2></div>
-          <button type="button" id="show-flow" aria-pressed="false">开启信号循环</button>
         </div>
         <div class="network-screen">
           <span id="flow-status"></span>
@@ -82,7 +81,7 @@
         <p><strong>前向计算。</strong>每个隐藏单元先求各输入的加权和，加上自身偏置，再用 sigmoid 压到 0 至 1 之间。输出层将各隐藏单元的值加权求和，加上输出偏置，再用 sigmoid 得到预测为 1 的概率。展开更多单元时，可在参数表查阅每条连接的权重。</p>
         <p><strong>计算误差。</strong>每轮都使用完整真值表。四个输入对应 16 组样本，六个输入对应 64 组。若正确答案为 1，损失为 −ln(p)。若答案为 0，损失为 −ln(1−p)。取所有样本损失的平均值，就得到图中的交叉熵。</p>
         <p><strong>更新参数。</strong>输出分数的误差信号为 p − y。反向传播沿连接把它传回隐藏层，求出每个参数的平均梯度。Adam 结合历轮梯度及其平方来确定更新量，学习率控制步幅。切换学习率会从同一组初值重新计算 300 轮。</p>
-        <p class="observation"><strong>只翻转一位，预测会怎样变？</strong>保留四个输入、八个隐藏单元和学习率 0.03，把滑块拖到第 300 轮。选择 0101，两路亮起，输出概率约为 0.018。换成 0111，三路亮起，概率升至 0.951。打开信号循环，可以看到第三路改变后，各隐藏单元的激活值怎样变化。</p>
+        <p class="observation"><strong>只翻转一位，预测会怎样变？</strong>保留四个输入、八个隐藏单元和学习率 0.03，把滑块拖到第 300 轮。选择 0101，两路亮起，输出概率约为 0.018。换成 0111，三路亮起，概率升至 0.951。沿着第三路输入的光点，可以看到这一次变化传到了哪些隐藏单元。</p>
       </div>
     </section>
     <section class="sources"><h2>实现与参考</h2><div>

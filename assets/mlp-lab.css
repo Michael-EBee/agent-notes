@@ -46,12 +46,8 @@
 .bench select { cursor: pointer; font-family: var(--mono); max-width: 100%; }
 .bench button:enabled:hover, .bench select:hover { color: white; border-color: #80c6df; }
 .lab button:disabled { opacity: .48; cursor: default; }
-#show-flow, #play { background: #67e4d6; border-color: #67e4d6; color: #081a25; font-weight: 650; }
-#show-flow { display: inline-flex; align-items: center; gap: 8px; }
-#show-flow::before { content: ''; width: 0; height: 0; border-block: 5px solid transparent; border-left: 8px solid currentColor; }
-#show-flow[aria-pressed="true"] { color: #ded5ff; background: #352b54; border-color: #a990ff; }
-#show-flow[aria-pressed="true"]::before { width: 9px; height: 9px; border: 0; background: currentColor; }
-#show-flow:hover, #play:hover { box-shadow: 0 0 14px #65e2d433; }
+#play { background: #67e4d6; border-color: #67e4d6; color: #081a25; font-weight: 650; }
+#play:hover { box-shadow: 0 0 14px #65e2d433; }
 .network-screen {
   position: relative; isolation: isolate;
   padding: 12px 12px 4px; border: 1px solid #34586e; border-radius: 3px;

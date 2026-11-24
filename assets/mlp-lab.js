@@ -7,7 +7,7 @@
   let history, reports, curvePoints, signals;
   let epoch = 0, samplePage = 0;
   let trainingTimer = null;
-  let looping = false, flowFrame = null, flowTimer = null, pass = 0;
+  let flowFrame = null, flowTimer = null, pass = 0;
   let movingDots = [];
 
   function signed(value, digits = 3) {
@@ -131,7 +131,6 @@
   // The signal clock only advances the display. Training has its own clock.
   function flowStage(stage) {
     clearFlow();
-    if (!looping) return;
     const split = inputCount * hiddenCount;
     const start = [0, split, edges.length][stage];
     if (stage === 0) pass++;
@@ -174,13 +173,9 @@
     advanceDots(began);
   }
 
-  function syncFlow() {
-    clearFlow();
+  function restartFlow() {
     pass = 0;
-    byId('show-flow').textContent = looping ? '停止信号循环' : '开启信号循环';
-    byId('show-flow').setAttribute('aria-pressed', String(looping));
-    if (looping) flowStage(0);
-    else byId('flow-status').textContent = `循环已关闭 · 0 / ${edges.length}`;
+    flowStage(0);
   }
 
   function renderSamples() {
@@ -255,7 +250,7 @@
       (32 + 296 * i / totalEpochs).toFixed(2) + ',' + (78 - 66 * loss / ceiling).toFixed(2));
     byId('curve-full').setAttribute('d', 'M' + curvePoints.join(' L'));
     render();
-    syncFlow();
+    restartFlow();
   }
 
   for (const id of ['rate', 'hidden-size', 'input-size']) byId(id).addEventListener('change', calculate);
@@ -263,7 +258,7 @@
     samplePage = Math.floor(Number(byId('sample').value) / pageSize);
     drawNetwork();
     renderSamples();
-    syncFlow();
+    restartFlow();
   });
   for (const [id, direction] of [['prev-samples', -1], ['next-samples', 1]]) {
     byId(id).addEventListener('click', () => {
@@ -271,11 +266,7 @@
       renderSamples();
     });
   }
-  byId('show-flow').addEventListener('click', () => {
-    looping = !looping;
-    syncFlow();
-  });
-  reducedMotion.addEventListener('change', syncFlow);
+  reducedMotion.addEventListener('change', restartFlow);
   byId('epoch').addEventListener('input', event => {
     pauseTraining();
     epoch = Number(event.target.value);
