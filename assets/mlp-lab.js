@@ -3,18 +3,9 @@
   const totalEpochs = 300;
   const inputs = [[0, 0], [0, 1], [1, 0], [1, 1]];
   const targets = [0, 1, 1, 0];
-  const labels = [
-    'x₁ → h₁', 'x₂ → h₁', 'h₁ 偏置', 'x₁ → h₂', 'x₂ → h₂',
-    'h₂ 偏置', 'h₁ → 输出', 'h₂ → 输出', '输出偏置',
-  ];
-  const nodes = [
-    { x: 58, y: 77, label: 'x₁' }, { x: 58, y: 190, label: 'x₂' },
-    { x: 277, y: 77, label: 'h₁' }, { x: 277, y: 190, label: 'h₂' },
-    { x: 502, y: 133.5, label: 'p' },
-  ];
-  // from node, to node, parameter index, label position along the connection.
-  const edges = [[0, 2, 0, 0.45], [1, 2, 1, 0.29], [0, 3, 3, 0.29],
-    [1, 3, 4, 0.45], [2, 4, 6, 0.5], [3, 4, 7, 0.5]];
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let nodes, edges, labels, signals;
+  let flowFrame = null;
   let epoch = 0;
   let history;
   let reports;
@@ -25,16 +16,47 @@
     return (value < 0 ? '−' : '+') + Math.abs(value).toFixed(digits);
   }
 
+  function buildNetwork(size) {
+    const height = 250 + Math.max(0, size - 2) * 88;
+    const mid = (height + 18) / 2;
+    const spread = 56 + Math.max(0, size - 2) * 30;
+    const hidden = Array.from({ length: size }, (_, i) => ({
+      x: 277, y: size === 1 ? mid : 77 + i * (height - 136) / (size - 1),
+      label: 'h' + '₁₂₃₄'[i],
+    }));
+    nodes = [{ x: 58, y: mid - spread, label: 'x₁' }, { x: 58, y: mid + spread, label: 'x₂' },
+      ...hidden, { x: 502, y: mid, label: 'p' }];
+    edges = [];
+    labels = [];
+    hidden.forEach((node, i) => {
+      for (let input = 0; input < 2; input++) {
+        edges.push({ from: input, to: i + 2, param: 3 * i + input, position: input === 0 ? 0.43 : 0.7 });
+        labels.push(nodes[input].label + ' → ' + node.label);
+      }
+      labels.push(node.label + ' 偏置');
+    });
+    hidden.forEach((node, i) => {
+      edges.push({ from: i + 2, to: nodes.length - 1, param: 3 * size + i, position: 0.44 });
+      labels.push(node.label + ' → 输出');
+    });
+    labels.push('输出偏置');
+    byId('network').setAttribute('viewBox', '0 0 560 ' + height);
+    byId('parameters-title').textContent = labels.length + ' 个参数怎样变化？';
+    byId('parameter-description').textContent = `当前有 ${size} 个隐藏单元。每次更新调整 ${edges.length} 个连接权重和 ${size + 1} 个偏置。点击「单步 +1」可对照当前值和上轮的差。`;
+  }
+
   function drawNetwork(params) {
     const index = Number(byId('sample').value);
     const [x1, x2] = inputs[index];
-    const { h1, h2, probability } = MlpModel.activations(params, x1, x2);
-    const values = [x1, x2, h1.toFixed(3), h2.toFixed(3), probability.toFixed(3)];
+    const { hidden, probability } = MlpModel.activations(params, x1, x2);
+    const activations = [x1, x2, ...hidden, probability];
+    const values = activations.map((value, i) => i < 2 ? value : value.toFixed(3));
+    signals = edges.map(({ from, param }) => activations[from] * params[param]);
     const layers = ['输入层', '隐藏层', '输出概率'].map((name, i) =>
-      `<text class="net-layer" x="${nodes[i * 2].x}" y="22" text-anchor="middle">${name}</text>`).join('');
+      `<text class="net-layer" x="${[58, 277, 502][i]}" y="22" text-anchor="middle">${name}</text>`).join('');
     const lines = [];
     const weights = [];
-    for (const [from, to, param, position] of edges) {
+    for (const { from, to, param, position } of edges) {
       const start = nodes[from];
       const end = nodes[to];
       const value = params[param];
@@ -45,11 +67,70 @@
       const y = start.y + (end.y - start.y) * position;
       weights.push(`<text class="edge-value" x="${x}" y="${y + 4}" text-anchor="middle" fill="${color}">${signed(value, 2)}</text>`);
     }
-    const circles = nodes.map((node, i) => `<g class="net-node${i === 4 ? ' output' : ''}" transform="translate(${node.x} ${node.y})">
+    const circles = nodes.map((node, i) => `<g class="net-node${i === nodes.length - 1 ? ' output' : ''}" transform="translate(${node.x} ${node.y})">
       <circle r="28"/><text class="node-symbol" text-anchor="middle" y="-2">${node.label}</text>
       <text class="node-value" text-anchor="middle" y="15">${values[i]}</text></g>`).join('');
-    byId('network').innerHTML = layers + lines.join('') + weights.join('') + circles;
-    byId('signal').textContent = `输入 (${x1}, ${x2}) 时，隐藏层给出 ${values[2]} 和 ${values[3]}，输出概率为 ${values[4]}。`;
+    byId('network').innerHTML = layers + lines.join('') + weights.join('') + '<g id="flow-dots" aria-hidden="true"></g>' + circles;
+    byId('signal').textContent = `输入 (${x1}, ${x2}) 时，隐藏层给出 ${values.slice(2, -1).join('、')}，输出概率为 ${values.at(-1)}。`;
+    const nonzero = signals.filter(value => value !== 0).length;
+    byId('flow-summary').textContent = `当前样本前向传递 ${edges.length} 次，其中 ${nonzero} 次的加权值非零。每轮四组样本共完成 ${inputs.length * edges.length} 次前向传递。`;
+  }
+
+  function flowStatus(stage, arrived) {
+    byId('flow-status').textContent = `${stage} · 已送达 ${arrived} / ${edges.length}`;
+  }
+
+  function stopFlow() {
+    window.cancelAnimationFrame(flowFrame);
+    flowFrame = null;
+    byId('flow-dots')?.replaceChildren();
+    byId('show-flow').textContent = '播放信号';
+    flowStatus('准备就绪', 0);
+  }
+
+  function playFlow() {
+    stopFlow();
+    const finish = () => {
+      stopFlow();
+      flowStatus('前向传播完成', edges.length);
+    };
+    if (reducedMotion.matches) {
+      finish();
+      return;
+    }
+    byId('show-flow').textContent = '停止演示';
+    const firstStageCount = edges.filter(edge => edge.from < 2).length;
+    const started = performance.now();
+    let lastStage = -1;
+    function tick(now) {
+      const elapsed = Math.max(0, (now - started) / 850);
+      const stage = Math.floor(elapsed);
+      if (stage >= 2 || reducedMotion.matches) {
+        finish();
+        return;
+      }
+      const start = stage === 0 ? 0 : firstStageCount;
+      const end = stage === 0 ? firstStageCount : edges.length;
+      const group = byId('flow-dots');
+      if (stage !== lastStage) {
+        flowStatus(stage === 0 ? '输入层 → 隐藏层' : '隐藏层 → 输出层', start);
+        group.innerHTML = signals.slice(start, end).map(value => {
+          const magnitude = Math.abs(value);
+          const radius = 5 + 6 * magnitude / (1 + magnitude);
+          return `<circle class="signal-dot${value === 0 ? ' zero' : ''}" r="${radius}"/>`;
+        }).join('');
+        lastStage = stage;
+      }
+      const t = elapsed - stage;
+      for (let i = start; i < end; i++) {
+        const from = nodes[edges[i].from], to = nodes[edges[i].to];
+        const dot = group.children[i - start];
+        dot.setAttribute('cx', from.x + (to.x - from.x) * t);
+        dot.setAttribute('cy', from.y + (to.y - from.y) * t);
+      }
+      flowFrame = window.requestAnimationFrame(tick);
+    }
+    tick(started);
   }
 
   function render() {
@@ -90,23 +171,47 @@
   function calculate() {
     pause();
     epoch = 0;
-    history = MlpModel.train(Number(byId('rate').value), totalEpochs);
+    const size = Number(byId('hidden-size').value);
+    buildNetwork(size);
+    stopFlow();
+    history = MlpModel.train(Number(byId('rate').value), totalEpochs, size);
     reports = history.map(MlpModel.evaluate);
+    const ceiling = Math.ceil(Math.max(...reports.map(report => report.loss)) * 10) / 10;
+    byId('loss-max').textContent = ceiling.toFixed(1);
+    byId('loss-mid').textContent = Number((ceiling / 2).toFixed(2));
     curvePoints = reports.map(({ loss }, i) =>
-      (32 + 296 * i / totalEpochs).toFixed(2) + ',' + (78 - 66 * loss / 0.6).toFixed(2));
+      (32 + 296 * i / totalEpochs).toFixed(2) + ',' + (78 - 66 * loss / ceiling).toFixed(2));
     byId('curve-full').setAttribute('d', 'M' + curvePoints.join(' L'));
     render();
   }
 
   byId('rate').addEventListener('change', calculate);
-  byId('sample').addEventListener('change', () => drawNetwork(history[epoch]));
+  byId('hidden-size').addEventListener('change', () => {
+    calculate();
+    playFlow();
+  });
+  byId('sample').addEventListener('change', () => {
+    drawNetwork(history[epoch]);
+    if (timer === null) playFlow();
+  });
+  byId('show-flow').addEventListener('click', () => {
+    if (flowFrame !== null) {
+      stopFlow();
+      return;
+    }
+    pause();
+    render();
+    playFlow();
+  });
   byId('epoch').addEventListener('input', event => {
     pause();
+    stopFlow();
     epoch = Number(event.target.value);
     render();
   });
   byId('reset').addEventListener('click', () => {
     pause();
+    stopFlow();
     epoch = 0;
     render();
   });
@@ -114,8 +219,10 @@
     pause();
     epoch = Math.min(epoch + 1, totalEpochs);
     render();
+    playFlow();
   });
   byId('play').addEventListener('click', () => {
+    stopFlow();
     if (timer !== null) {
       pause();
     } else {

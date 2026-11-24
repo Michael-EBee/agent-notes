@@ -1,5 +1,5 @@
-// Each hidden unit owns two input weights and one bias. The output unit
-// owns the last two weights and the last bias, in the same order.
+// Each hidden unit owns two input weights and one bias. Output weights
+// follow the hidden triples in unit order, with the output bias last.
 const MlpModel = (() => {
   const samples = [
     [0, 0, 0],
@@ -8,8 +8,13 @@ const MlpModel = (() => {
     [1, 1, 0],
   ];
 
-  function initial() {
-    return [2, -2, -1, -2, 2, -1, 3, 3, -2.5];
+  function initial(hiddenCount = 2) {
+    if (!Number.isInteger(hiddenCount) || hiddenCount < 1 || hiddenCount > 4) {
+      throw new RangeError('Hidden unit count must be an integer from 1 to 4.');
+    }
+    const units = [[2, -2, -1], [-2, 2, -1], [1.2, -0.5, 0.2], [-0.65, 0.95, -0.35]];
+    const outputWeights = [3, 3, 0.4, -0.6];
+    return [...units.slice(0, hiddenCount).flat(), ...outputWeights.slice(0, hiddenCount), -2.5];
   }
 
   function sigmoid(logit) {
@@ -17,11 +22,19 @@ const MlpModel = (() => {
   }
 
   function activations(params, x1, x2) {
-    const h1 = sigmoid(params[0] * x1 + params[1] * x2 + params[2]);
-    const h2 = sigmoid(params[3] * x1 + params[4] * x2 + params[5]);
-    const logit = params[6] * h1 + params[7] * h2 + params[8];
+    const hiddenCount = (params.length - 1) / 4;
+    const outputStart = 3 * hiddenCount;
+    const hidden = [];
+    let logit = 0;
+    for (let i = 0; i < hiddenCount; i++) {
+      const start = 3 * i;
+      const value = sigmoid(params[start] * x1 + params[start + 1] * x2 + params[start + 2]);
+      hidden.push(value);
+      logit += params[outputStart + i] * value;
+    }
+    logit += params[params.length - 1];
     const probability = sigmoid(logit);
-    return { h1, h2, logit, probability };
+    return { hidden, h1: hidden[0], h2: hidden[1], logit, probability };
   }
 
   function forward(params, x1, x2) {
@@ -43,29 +56,28 @@ const MlpModel = (() => {
   }
 
   function gradients(params) {
-    const sums = Array(9).fill(0);
+    const sums = Array(params.length).fill(0);
     for (const [x1, x2, label] of samples) {
-      const { h1, h2, probability } = activations(params, x1, x2);
+      const { hidden, probability } = activations(params, x1, x2);
       const outputDelta = probability - label;
-      const h1Delta = outputDelta * params[6] * h1 * (1 - h1);
-      const h2Delta = outputDelta * params[7] * h2 * (1 - h2);
-      sums[0] += h1Delta * x1;
-      sums[1] += h1Delta * x2;
-      sums[2] += h1Delta;
-      sums[3] += h2Delta * x1;
-      sums[4] += h2Delta * x2;
-      sums[5] += h2Delta;
-      sums[6] += outputDelta * h1;
-      sums[7] += outputDelta * h2;
-      sums[8] += outputDelta;
+      const outputStart = 3 * hidden.length;
+      for (let i = 0; i < hidden.length; i++) {
+        const value = hidden[i];
+        const delta = outputDelta * params[outputStart + i] * value * (1 - value);
+        sums[3 * i] += delta * x1;
+        sums[3 * i + 1] += delta * x2;
+        sums[3 * i + 2] += delta;
+        sums[outputStart + i] += outputDelta * value;
+      }
+      sums[sums.length - 1] += outputDelta;
     }
     return sums.map(sum => sum / samples.length);
   }
 
-  function train(rate = 0.03, epochs = 300) {
-    const history = [initial()];
-    const firstMoment = Array(9).fill(0);
-    const secondMoment = Array(9).fill(0);
+  function train(rate = 0.03, epochs = 300, hiddenCount = 2) {
+    const history = [initial(hiddenCount)];
+    const firstMoment = Array(history[0].length).fill(0);
+    const secondMoment = Array(history[0].length).fill(0);
     const beta1 = 0.9;
     const beta2 = 0.999;
     const epsilon = 1e-8;
