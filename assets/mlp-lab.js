@@ -146,8 +146,9 @@
     }
     const end = stage === 0 ? split : edges.length;
     const group = byId('flow-dots');
-    group.innerHTML = '<circle class="signal-dot"/>'.repeat(end - start);
-    movingDots = Array.from(group.children, (dot, i) => ({ dot, index: start + i }));
+    group.innerHTML = '<path class="signal-trails"/>' + '<circle class="signal-dot"/>'.repeat(end - start);
+    const trails = group.firstElementChild;
+    movingDots = Array.from(group.querySelectorAll('circle'), (dot, i) => ({ dot, index: start + i }));
     updateDotSizes();
     const began = performance.now();
     function advanceDots(now) {
@@ -156,11 +157,18 @@
         advance();
         return;
       }
+      const tail = Math.max(0, t - 0.09);
+      const segments = [];
       for (const { dot, index } of movingDots) {
         const { from, to } = edges[index];
-        dot.setAttribute('cx', nodes[from].x + (nodes[to].x - nodes[from].x) * t);
-        dot.setAttribute('cy', nodes[from].y + (nodes[to].y - nodes[from].y) * t);
+        const start = nodes[from];
+        const dx = nodes[to].x - start.x, dy = nodes[to].y - start.y;
+        const x = start.x + dx * t, y = start.y + dy * t;
+        dot.setAttribute('cx', x);
+        dot.setAttribute('cy', y);
+        if (signals[index] !== 0) segments.push(`M${start.x + dx * tail},${start.y + dy * tail}L${x},${y}`);
       }
+      trails.setAttribute('d', segments.join(''));
       flowFrame = requestAnimationFrame(advanceDots);
     }
     advanceDots(began);
@@ -251,12 +259,6 @@
   }
 
   for (const id of ['rate', 'hidden-size', 'input-size']) byId(id).addEventListener('change', calculate);
-  byId('course-preset').addEventListener('click', () => {
-    byId('input-size').value = byId('hidden-size').value = 2;
-    byId('rate').value = 0.03;
-    byId('sample').value = 1;
-    calculate();
-  });
   byId('sample').addEventListener('change', () => {
     samplePage = Math.floor(Number(byId('sample').value) / pageSize);
     drawNetwork();

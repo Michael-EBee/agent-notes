@@ -9,7 +9,7 @@
 - `about.html`：个人介绍。
 - `posts/starting.html`：五个项目的总览与详细文章入口。
 - `posts/spotify-design.html`、`song-research.html`、`knowledge-base.html`、`engineering-workflow.html`、`game-mod.html`：五篇项目手记。
-- [MLP 如何学会异或？](posts/mlp-parameters.html) 展示第二篇第 15 节作业，可在浏览器中单步训练网络并观察参数更新。
+- [MLP 如何学会奇偶判断？](posts/mlp-parameters.html) 展示第二篇第 15 节作业，可在浏览器中单步训练网络并观察参数更新。
 - `assets/`：样式、移动端菜单、网站图标。
 
 现有七篇手记，包括一篇总览、五篇项目回顾和一篇交互式课程作业。项目回顾依据本人授权查阅的项目会话与相关材料整理。

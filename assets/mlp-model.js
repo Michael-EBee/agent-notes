@@ -2,13 +2,7 @@
 // The output weights and the output bias occupy the final H+1 positions.
 const MlpModel = (() => {
   function initialParameters(inputCount, hiddenCount) {
-    // Preserve the published two-input experiment and its three width variants.
-    if (inputCount === 2 && hiddenCount <= 4) {
-      const units = [[2, -2, -1], [-2, 2, -1], [1.2, -0.5, 0.2], [-0.65, 0.95, -0.35]];
-      const outputWeights = [3, 3, 0.4, -0.6];
-      return [...units.slice(0, hiddenCount).flat(), ...outputWeights.slice(0, hiddenCount), -2.5];
-    }
-    // A fixed seed gives each new topology reproducible weights, independent of labels.
+    // A fixed seed gives each topology reproducible weights, independent of labels.
     let state = 42;
     return Array.from({ length: (inputCount + 2) * hiddenCount + 1 }, () => {
       state = (Math.imul(1664525, state) + 1013904223) >>> 0;
@@ -53,7 +47,7 @@ const MlpModel = (() => {
         logit += params[outputStart + i] * value;
       }
       logit += params[params.length - 1];
-      return { hidden, h1: hidden[0], h2: hidden[1], logit, probability: sigmoid(logit) };
+      return { hidden, logit, probability: sigmoid(logit) };
     }
 
     function evaluate(params) {
@@ -117,16 +111,5 @@ const MlpModel = (() => {
     return { samples, initial, activations, evaluate, gradients, train };
   }
 
-  // The original two-input API inferred hidden width from its flat parameter array.
-  const twoInputModel = params => create(2, (params.length - 1) / 4);
-  const activations = (params, x1, x2) => twoInputModel(params).activations(params, [x1, x2]);
-  return {
-    create,
-    initial: (hiddenCount = 2) => create(2, hiddenCount).initial(),
-    activations,
-    forward: (params, x1, x2) => activations(params, x1, x2).probability,
-    evaluate: params => twoInputModel(params).evaluate(params),
-    gradients: params => twoInputModel(params).gradients(params),
-    train: (rate, epochs, hiddenCount = 2) => create(2, hiddenCount).train(rate, epochs),
-  };
+  return { create };
 })();

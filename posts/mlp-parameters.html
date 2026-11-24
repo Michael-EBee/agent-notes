@@ -4,29 +4,31 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="第二篇第 15 节课程作业。在浏览器里调整多层感知机的输入与隐藏单元，查看信号流、参数、损失及多输入异或预测。">
-  <meta name="theme-color" content="#080e1c">
-  <title>MLP 如何学会异或？ · EBee的个人网站</title>
+  <meta name="theme-color" content="#244e40">
+  <title>MLP 如何学会奇偶判断？ · EBee的个人网站</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../assets/styles.css">
-  <link rel="stylesheet" href="../assets/mlp-lab.css?v=3">
+  <link rel="stylesheet" href="../assets/mlp-lab.css?v=4">
   <script defer src="../assets/main.js"></script>
-  <script defer src="../assets/mlp-model.js?v=3"></script>
-  <script defer src="../assets/mlp-lab.js?v=3"></script>
+  <script defer src="../assets/mlp-model.js?v=4"></script>
+  <script defer src="../assets/mlp-lab.js?v=4"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳转到正文</a>
   <header class="site-header wrap">
-    <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">✳</span><span>EBee的个人网站<span class="brand-sub">MICHAEL-EBEE / FIELD NOTES</span></span></a>
-    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation" hidden>菜单 ＋</button>
-    <nav id="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../notes.html">手记</a><a href="../about.html">关于</a><a class="github-link" href="https://github.com/Michael-EBee">GitHub ↗</a></nav>
+    <a class="brand" href="../index.html" aria-label="EBee的个人网站首页"><span class="brand-mark" aria-hidden="true">✳</span><span>EBee的个人网站<span class="brand-sub">MICHAEL-EBEE / FIELD NOTES</span></span></a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation" hidden>菜单 <span aria-hidden="true">＋</span></button>
+    <nav id="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../notes.html" aria-current="page">手记</a><a href="../about.html">关于</a><a class="github-link" href="https://github.com/Michael-EBee" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span><span class="sr-only">（新窗口打开）</span></a></nav>
   </header>
   <main id="main" class="wrap lab">
-    <header class="lab-intro">
-      <div class="lab-meta"><a href="../notes.html" class="back-link">← 所有手记</a><span>课程作业 / 第二篇 · 第 15 节</span></div>
-      <h1>MLP 如何学会<span>异或</span>？</h1>
-      <p>输入中有奇数个 1 时，目标为 1。改变网络规模，追踪信号如何穿过各层，观察每轮训练怎样改变预测。</p>
+    <a class="back-link" href="../notes.html">← 返回所有手记</a>
+    <header class="article-header">
+      <div class="note-meta"><span class="tag">课程作业</span><time datetime="2026-11-24">2026 年 11 月 24 日</time></div>
+      <h1>MLP 如何学会奇偶判断？</h1>
+      <p>给网络四路开关信号。亮起奇数路时，目标输出为 1，亮起偶数路时为 0。只改动一路输入，看看变化怎样穿过隐藏层，抵达输出端。</p>
+      <div class="author-line"><span class="author-avatar" aria-hidden="true">e.</span><span>EBee</span><span>第二篇 · 第 15 节</span></div>
     </header>
-    <noscript><p>启用 JavaScript 即可操作实验，也可以下载页末的 Python 实现，在本地复现训练。</p></noscript>
+    <noscript><p>启用 JavaScript 即可操作实验，也可以下载页末的 Python 实现，在本地运行四路信号实验。</p></noscript>
     <section class="bench" aria-label="MLP 训练实验" id="bench" hidden>
       <div class="board">
         <div class="board-head"><div><p class="lab-kicker">NETWORK VIEW</p><h2>前向传播 <span id="topology" aria-label="网络结构">4 → 8 → 1</span></h2></div>
@@ -45,7 +47,7 @@
       </div>
       <div class="trainer">
         <div class="setup">
-          <div class="setup-head"><h2>网络配置</h2><button type="button" id="course-preset">载入课程原例</button></div>
+          <div class="setup-head"><h2>网络配置</h2></div>
           <div class="board-selects">
             <label>输入单元<select id="input-size"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select></label>
             <label>隐藏单元<select id="hidden-size"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option selected>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select></label>
@@ -80,16 +82,16 @@
         <p><strong>前向计算。</strong>每个隐藏单元先求各输入的加权和，加上自身偏置，再用 sigmoid 压到 0 至 1 之间。输出层将各隐藏单元的值加权求和，加上输出偏置，再用 sigmoid 得到预测为 1 的概率。展开更多单元时，可在参数表查阅每条连接的权重。</p>
         <p><strong>计算误差。</strong>每轮都使用完整真值表。四个输入对应 16 组样本，六个输入对应 64 组。若正确答案为 1，损失为 −ln(p)。若答案为 0，损失为 −ln(1−p)。取所有样本损失的平均值，就得到图中的交叉熵。</p>
         <p><strong>更新参数。</strong>输出分数的误差信号为 p − y。反向传播沿连接把它传回隐藏层，求出每个参数的平均梯度。Adam 结合历轮梯度及其平方来确定更新量，学习率控制步幅。切换学习率会从同一组初值重新计算 300 轮。</p>
-        <p class="observation"><strong>复现课程原例</strong>页面从四个输入、八个隐藏单元的扩展实验开始。点击「载入课程原例」，切回两个输入、两个隐藏单元和学习率 0.03。对照第 2 轮和第 300 轮，两次都判对了四组输入，但第 300 轮给正确类别的概率更高。</p>
+        <p class="observation"><strong>只翻转一位，预测会怎样变？</strong>保留四个输入、八个隐藏单元和学习率 0.03，把滑块拖到第 300 轮。选择 0101，两路亮起，输出概率约为 0.018。换成 0111，三路亮起，概率升至 0.951。打开信号循环，可以看到第三路改变后，各隐藏单元的激活值怎样变化。</p>
       </div>
     </section>
     <section class="sources"><h2>实现与参考</h2><div>
-      <a download href="../assets/mlp_xor.py">下载课程原例的 Python 实现 ↓</a>
+      <a download href="../assets/mlp_xor.py">下载四路信号实验的 Python 实现 ↓</a>
       <a href="https://github.com/Michael-EBee/agent-notes/blob/main/assets/mlp-model.js">浏览器训练源码 ↗</a>
       <a href="https://zhumy.github.io/Introduction_to_Artificial_Intelligence/#v7-p034c">《人工智能概论》第 15 节讲义 ↗</a>
       <a href="https://github.com/HKUDS/DeepTutor">交互式学习参考 · DeepTutor ↗</a>
-    </div><p>本页用 JavaScript 计算整条训练轨迹。下载后运行 <code>python mlp_xor.py</code>，即可用 Python 标准库复算课程原例（2 → 2 → 1，学习率 0.03）。</p></section>
+    </div><p>运行 <code>python mlp_xor.py</code>，可在本地训练同一套 4 → 8 → 1 网络，并对照网页核查全部 16 组预测。</p></section>
   </main>
-  <footer class="site-footer wrap"><a class="footer-brand" href="../index.html">✳ EBee的个人网站</a><p>记录尝试，也记录思考。</p><a href="../notes.html">返回手记 ↗</a></footer>
+  <footer class="site-footer wrap"><a class="footer-brand" href="../index.html">✳ EBee的个人网站</a><p>记录尝试，也记录思考。</p><a href="https://github.com/Michael-EBee" target="_blank" rel="noopener noreferrer">Michael-EBee <span aria-hidden="true">↗</span><span class="sr-only">（新窗口打开）</span></a></footer>
 </body>
 </html>
