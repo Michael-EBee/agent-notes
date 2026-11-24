@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="第二篇第 15 节课程作业。逐轮查看 MLP 学习 XOR 的九个参数、损失及四组样本预测。">
+  <meta name="theme-color" content="#244e40">
+  <title>MLP 如何学会异或？ · EBee的个人网站</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="stylesheet" href="../assets/mlp-lab.css">
+  <script defer src="../assets/main.js"></script>
+  <script defer src="../assets/mlp-model.js"></script>
+  <script defer src="../assets/mlp-lab.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳转到正文</a>
+  <header class="site-header wrap">
+    <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">✳</span><span>EBee的个人网站<span class="brand-sub">MICHAEL-EBEE / FIELD NOTES</span></span></a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation" hidden>菜单 ＋</button>
+    <nav id="navigation" aria-label="主导航"><a href="../index.html">首页</a><a href="../notes.html">手记</a><a href="../about.html">关于</a><a class="github-link" href="https://github.com/Michael-EBee">GitHub ↗</a></nav>
+  </header>
+  <main id="main" class="wrap lab">
+    <header class="lab-intro">
+      <a href="../notes.html" class="back-link">← 所有手记</a>
+      <div class="lab-meta"><span class="tag">课程作业</span><span>第二篇 · 第 15 节</span><time datetime="2026-11-24">2026.11.24</time></div>
+      <h1>MLP 如何学会<span class="underline">异或</span>？</h1>
+      <p>两个输入相同，答案为 0，两个输入不同，答案为 1。一个多层感知机（MLP）怎样调节九个参数，才能把这四种情况都判对？</p>
+    </header>
+    <noscript><p>启用 JavaScript 即可操作实验，也可以下载页末的 Python 实现，在本地复现训练。</p></noscript>
+    <section class="bench" aria-label="MLP 训练实验" id="bench" hidden>
+      <div class="board">
+        <div class="board-head"><div><p class="lab-kicker">NETWORK VIEW</p><h2>网络里的信号</h2></div>
+          <label class="sample-label">输入样本 <select id="sample"><option value="0">0, 0</option><option value="1" selected>0, 1</option><option value="2">1, 0</option><option value="3">1, 1</option></select></label>
+        </div>
+        <svg id="network" role="img" aria-label="当前样本的网络连接、激活值与预测概率" viewBox="0 0 560 250"></svg>
+        <div class="legend"><span><i></i>正权重</span><span><i></i>负权重</span><span>线越粗，权重绝对值越大</span></div>
+        <p id="signal"></p>
+      </div>
+      <div class="trainer">
+        <div class="trainer-head"><h2>训练记录</h2><label>学习率 <select id="rate"><option>0.01</option><option selected>0.03</option><option>0.1</option></select></label></div>
+        <div class="metrics"><div><span>平均损失</span><strong id="loss">—</strong></div><div><span>判对样本</span><strong id="correct">—</strong></div></div>
+        <svg id="curve" viewBox="0 0 340 100" role="img" aria-label="平均交叉熵随训练轮数变化，圆点标记当前轮数">
+          <g class="chart-grid"><path d="M32 12H328 M32 45H328 M32 78H328"/></g>
+          <g class="chart-text"><text x="0" y="16">0.6</text><text x="0" y="49">0.3</text><text x="13" y="82">0</text><text x="32" y="97">0</text><text x="328" y="97" text-anchor="end">300 轮</text></g>
+          <path id="curve-full"/><path id="curve-past"/><circle id="curve-dot" r="4"/>
+        </svg>
+        <p class="curve-caption">虚线是完整损失曲线。拖动滑块，可回看任意一轮。</p>
+        <label class="scrub-label" for="epoch">查看轮数 <strong><output id="epoch-number" for="epoch">0</output> / 300</strong></label>
+        <input type="range" min="0" max="300" value="0" id="epoch">
+        <div class="controls"><button type="button" id="play">播放训练</button><button type="button" id="step">单步 +1</button><button type="button" id="reset">回到起点</button></div>
+      </div>
+    </section>
+    <section class="lab-section" aria-labelledby="samples-title" id="samples-panel" hidden>
+      <div class="section-intro"><h2 id="samples-title">四组输入，逐一检验</h2><p>输出概率 ≥ 0.5 时判为 1。橙色刻线标出这个阈值。</p></div>
+      <div class="samples" id="predictions"></div>
+    </section>
+    <section class="lab-section" aria-labelledby="parameters-title" id="parameters-panel" hidden>
+      <div class="section-intro"><h2 id="parameters-title">九个参数怎样变化？</h2><p>每次更新都会同时调整六个连接权重和三个偏置。点击「单步 +1」，对照当前值和上轮的差。</p></div>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="逐轮参数明细"><table><thead><tr><th scope="col">参数</th><th scope="col">初始值</th><th scope="col">当前值</th><th scope="col">较上轮变化</th><th scope="col">当前梯度</th></tr></thead><tbody id="parameters"></tbody></table></div>
+    </section>
+    <section class="lab-section learn">
+      <div><p class="lab-kicker">METHOD</p><h2>从预测到更新</h2></div>
+      <div class="explanation">
+        <p><strong>前向计算。</strong>每个隐藏单元先求两个输入的加权和，加上自身偏置，再用 sigmoid 压到 0 至 1 之间。输出层把两个隐藏值组合成分数，再用 sigmoid 得到预测为 1 的概率。</p>
+        <p><strong>计算误差。</strong>每轮都用全部四组样本。若正确答案为 1，损失为 −ln(p)。若答案为 0，损失为 −ln(1−p)。把四个损失取平均，就得到图中的交叉熵。</p>
+        <p><strong>更新参数。</strong>输出分数的误差信号为 p − y。反向传播沿连接把它传回隐藏层，求出每个参数的平均梯度。Adam 结合历轮梯度及其平方来确定更新量，学习率控制步幅。切换学习率会从同一组初值重新计算 300 轮。</p>
+        <p class="observation"><strong>值得停下来的两轮</strong>用默认学习率 0.03，比一比第 2 轮和第 300 轮。两次都判对了四组输入，后者给正确类别的概率更高，所以交叉熵继续下降。这里的四组输入就是 XOR 的完整真值表。</p>
+      </div>
+    </section>
+    <section class="sources"><h2>实现与参考</h2><div>
+      <a download href="../assets/mlp_xor.py">下载 Python 实现（仅标准库） ↓</a>
+      <a href="https://github.com/Michael-EBee/agent-notes/blob/main/assets/mlp-model.js">浏览器训练源码 ↗</a>
+      <a href="https://zhumy.github.io/Introduction_to_Artificial_Intelligence/#v7-p034c">《人工智能概论》第 15 节讲义 ↗</a>
+      <a href="https://github.com/HKUDS/DeepTutor">交互式学习参考 · DeepTutor ↗</a>
+    </div><p>本页用 JavaScript 计算整条训练轨迹。下载后运行 <code>python mlp_xor.py</code> 可独立复算默认实验。</p></section>
+  </main>
+  <footer class="site-footer wrap"><a class="footer-brand" href="../index.html">✳ EBee的个人网站</a><p>记录尝试，也记录思考。</p><a href="../notes.html">返回手记 ↗</a></footer>
+</body>
+</html>
