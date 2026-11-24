@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="第二篇第 15 节课程作业。改变隐藏单元数，跟随信号看一次前向传播，再逐轮查看 MLP 学习异或时的参数、损失和预测。">
-  <meta name="theme-color" content="#244e40">
+  <meta name="description" content="第二篇第 15 节课程作业。在浏览器里调整多层感知机的输入与隐藏单元，查看信号流、参数、损失及多输入异或预测。">
+  <meta name="theme-color" content="#080e1c">
   <title>MLP 如何学会异或？ · EBee的个人网站</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../assets/styles.css">
-  <link rel="stylesheet" href="../assets/mlp-lab.css?v=2">
+  <link rel="stylesheet" href="../assets/mlp-lab.css?v=3">
   <script defer src="../assets/main.js"></script>
-  <script defer src="../assets/mlp-model.js?v=2"></script>
-  <script defer src="../assets/mlp-lab.js?v=2"></script>
+  <script defer src="../assets/mlp-model.js?v=3"></script>
+  <script defer src="../assets/mlp-lab.js?v=3"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳转到正文</a>
@@ -22,30 +22,36 @@
   </header>
   <main id="main" class="wrap lab">
     <header class="lab-intro">
-      <a href="../notes.html" class="back-link">← 所有手记</a>
-      <div class="lab-meta"><span class="tag">课程作业</span><span>第二篇 · 第 15 节</span><time datetime="2026-11-24">2026.11.24</time></div>
-      <h1>MLP 如何学会<span class="underline">异或</span>？</h1>
-      <p>两个输入相同，答案为 0，两个输入不同，答案为 1。默认的多层感知机（MLP）有两个隐藏单元。它怎样调节九个参数，才能把这四种情况都判对？</p>
+      <div class="lab-meta"><a href="../notes.html" class="back-link">← 所有手记</a><span>课程作业 / 第二篇 · 第 15 节</span></div>
+      <h1>MLP 如何学会<span>异或</span>？</h1>
+      <p>输入中有奇数个 1 时，目标为 1。改变网络规模，追踪信号如何穿过各层，观察每轮训练怎样改变预测。</p>
     </header>
     <noscript><p>启用 JavaScript 即可操作实验，也可以下载页末的 Python 实现，在本地复现训练。</p></noscript>
     <section class="bench" aria-label="MLP 训练实验" id="bench" hidden>
       <div class="board">
-        <div class="board-head"><div><p class="lab-kicker">NETWORK VIEW</p><h2>网络里的信号</h2></div>
-          <div class="board-selects">
-            <label>隐藏单元数 <select id="hidden-size"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></label>
-            <label>输入样本 <select id="sample"><option value="0">0, 0</option><option value="1" selected>0, 1</option><option value="2">1, 0</option><option value="3">1, 1</option></select></label>
-          </div>
+        <div class="board-head"><div><p class="lab-kicker">NETWORK VIEW</p><h2>前向传播 <span id="topology" aria-label="网络结构">4 → 8 → 1</span></h2></div>
+          <button type="button" id="show-flow" aria-pressed="false">开启信号循环</button>
         </div>
-        <svg id="network" role="img" aria-label="当前样本的网络连接、激活值与预测概率" viewBox="0 0 560 250"></svg>
-        <div class="legend"><span><i></i>正权重</span><span><i></i>负权重</span><span>线越粗，权重绝对值越大</span></div>
+        <div class="network-screen">
+          <span id="flow-status"></span>
+          <svg id="network" role="img" aria-label="当前样本的输入层、隐藏层及输出层连接" viewBox="0 0 560 360"></svg>
+        </div>
+        <div class="legend"><span><i></i>正权重</span><span><i></i>负权重</span><span>线宽表示权重大小，节点外环表示激活值（0–1）</span></div>
         <div class="flow-readout">
-          <div class="flow-controls"><button type="button" id="show-flow">播放信号</button><span id="flow-status" role="status"></span></div>
-          <p>每个光点代表一次传递。空心点的值为零，实心点越大，表示这条连接传递的加权值绝对值越大。</p>
+          <p>每个光点携带一个加权值。空心表示零，实心点越大，值的绝对值越大。</p>
           <p id="flow-summary"></p>
           <p id="signal"></p>
         </div>
       </div>
       <div class="trainer">
+        <div class="setup">
+          <div class="setup-head"><h2>网络配置</h2><button type="button" id="course-preset">载入课程原例</button></div>
+          <div class="board-selects">
+            <label>输入单元<select id="input-size"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select></label>
+            <label>隐藏单元<select id="hidden-size"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option selected>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select></label>
+            <label>输入样本<select id="sample"></select></label>
+          </div>
+        </div>
         <div class="trainer-head"><h2>训练记录</h2><label>学习率 <select id="rate"><option>0.01</option><option selected>0.03</option><option>0.1</option></select></label></div>
         <div class="metrics"><div><span>平均损失</span><strong id="loss">—</strong></div><div><span>判对样本</span><strong id="correct">—</strong></div></div>
         <svg id="curve" viewBox="0 0 340 100" role="img" aria-label="平均交叉熵随训练轮数变化，圆点标记当前轮数">
@@ -60,8 +66,9 @@
       </div>
     </section>
     <section class="lab-section" aria-labelledby="samples-title" id="samples-panel" hidden>
-      <div class="section-intro"><h2 id="samples-title">四组输入，逐一检验</h2><p>输出概率 ≥ 0.5 时判为 1。橙色刻线标出这个阈值。</p></div>
+      <div class="section-intro"><h2 id="samples-title">逐组检验预测</h2><p>输出概率达到中线的阈值 0.5 时，模型判为 1。</p></div>
       <div class="samples" id="predictions"></div>
+      <div id="sample-pager" hidden><button type="button" id="prev-samples">上一组</button><span id="sample-page"></span><button type="button" id="next-samples">下一组</button></div>
     </section>
     <section class="lab-section" aria-labelledby="parameters-title" id="parameters-panel" hidden>
       <div class="section-intro"><h2 id="parameters-title">参数怎样变化？</h2><p id="parameter-description">点击「单步 +1」，对照权重、偏置的当前值和上轮的差。</p></div>
@@ -70,18 +77,18 @@
     <section class="lab-section learn">
       <div><p class="lab-kicker">METHOD</p><h2>从预测到更新</h2></div>
       <div class="explanation">
-        <p><strong>前向计算。</strong>每个隐藏单元先求两个输入的加权和，加上自身偏置，再用 sigmoid 压到 0 至 1 之间。输出层将各隐藏单元的值加权求和，加上输出偏置，再用 sigmoid 得到预测为 1 的概率。</p>
-        <p><strong>计算误差。</strong>每轮都用全部四组样本。若正确答案为 1，损失为 −ln(p)。若答案为 0，损失为 −ln(1−p)。把四个损失取平均，就得到图中的交叉熵。</p>
+        <p><strong>前向计算。</strong>每个隐藏单元先求各输入的加权和，加上自身偏置，再用 sigmoid 压到 0 至 1 之间。输出层将各隐藏单元的值加权求和，加上输出偏置，再用 sigmoid 得到预测为 1 的概率。展开更多单元时，可在参数表查阅每条连接的权重。</p>
+        <p><strong>计算误差。</strong>每轮都使用完整真值表。四个输入对应 16 组样本，六个输入对应 64 组。若正确答案为 1，损失为 −ln(p)。若答案为 0，损失为 −ln(1−p)。取所有样本损失的平均值，就得到图中的交叉熵。</p>
         <p><strong>更新参数。</strong>输出分数的误差信号为 p − y。反向传播沿连接把它传回隐藏层，求出每个参数的平均梯度。Adam 结合历轮梯度及其平方来确定更新量，学习率控制步幅。切换学习率会从同一组初值重新计算 300 轮。</p>
-        <p class="observation"><strong>值得停下来的两轮</strong>保留默认的两个隐藏单元和学习率 0.03，比一比第 2 轮和第 300 轮。两次都判对了四组输入，后者给正确类别的概率更高，所以交叉熵继续下降。这里的四组输入就是 XOR 的完整真值表。</p>
+        <p class="observation"><strong>复现课程原例</strong>页面从四个输入、八个隐藏单元的扩展实验开始。点击「载入课程原例」，切回两个输入、两个隐藏单元和学习率 0.03。对照第 2 轮和第 300 轮，两次都判对了四组输入，但第 300 轮给正确类别的概率更高。</p>
       </div>
     </section>
     <section class="sources"><h2>实现与参考</h2><div>
-      <a download href="../assets/mlp_xor.py">下载默认实验的 Python 实现（仅标准库） ↓</a>
+      <a download href="../assets/mlp_xor.py">下载课程原例的 Python 实现 ↓</a>
       <a href="https://github.com/Michael-EBee/agent-notes/blob/main/assets/mlp-model.js">浏览器训练源码 ↗</a>
       <a href="https://zhumy.github.io/Introduction_to_Artificial_Intelligence/#v7-p034c">《人工智能概论》第 15 节讲义 ↗</a>
       <a href="https://github.com/HKUDS/DeepTutor">交互式学习参考 · DeepTutor ↗</a>
-    </div><p>本页用 JavaScript 计算整条训练轨迹。下载后运行 <code>python mlp_xor.py</code>，可复算两个隐藏单元、学习率 0.03 的默认作业实验。</p></section>
+    </div><p>本页用 JavaScript 计算整条训练轨迹。下载后运行 <code>python mlp_xor.py</code>，即可用 Python 标准库复算课程原例（2 → 2 → 1，学习率 0.03）。</p></section>
   </main>
   <footer class="site-footer wrap"><a class="footer-brand" href="../index.html">✳ EBee的个人网站</a><p>记录尝试，也记录思考。</p><a href="../notes.html">返回手记 ↗</a></footer>
 </body>
